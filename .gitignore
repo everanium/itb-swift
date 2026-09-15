@@ -1,0 +1,9 @@
+# SwiftPM build artefacts.
+.build/
+Package.resolved
+
+# Editor / LSP scratch.
+.swiftpm/
+.index-build/
+*.swp
+*~
