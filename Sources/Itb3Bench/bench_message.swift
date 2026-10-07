@@ -1,6 +1,6 @@
 /*
- * bench_message.swift — encryptMessage throughput vs plaintext size
- * (Single Message profile) at 1 MiB / 16 MiB / 64 MiB.
+ * encryptMessage throughput vs plaintext size (Single Message
+ * profile) at 1 MiB / 16 MiB / 64 MiB.
  */
 
 import Foundation

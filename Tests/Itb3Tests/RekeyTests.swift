@@ -1,6 +1,5 @@
 /*
- * RekeyTests.swift — Init → rekey → load receiver with the rotated
- * blob → round trip.
+ * Init → rekey → load receiver with the rotated blob → round trip.
  */
 
 import Foundation

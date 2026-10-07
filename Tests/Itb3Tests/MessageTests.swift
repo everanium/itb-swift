@@ -1,7 +1,7 @@
 /*
- * MessageTests.swift — Single Message round trip across every
- * shipped cipher-bearing profile at small (4 KiB) and medium
- * (256 KiB) payloads.
+ * Single Message round trip across every shipped
+ * cipher-bearing profile at small (4 KiB) and medium (256
+ * KiB) payloads.
  */
 
 import Foundation

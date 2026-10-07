@@ -1,5 +1,5 @@
 /*
- * ItbError.swift — the error type thrown by every fallible entry.
+ * The error type thrown by every fallible entry.
  *
  * Carries the mapped Status, the raw numeric code (attributable even
  * for codes outside the Status table), and the Go-side diagnostic
@@ -26,7 +26,10 @@ public struct ItbError: Error, Sendable, CustomStringConvertible {
     }
 
     public var description: String {
-        let base = "ITB status \(code) (\(status.label))"
+        // The library hands back a finished sentence naming the class
+        // of failure and, where there is one, the instance, so nothing
+        // is composed here beyond the numeric code.
+        let base = "ITB status \(code)"
         return message.isEmpty ? base : "\(base): \(message)"
     }
 }

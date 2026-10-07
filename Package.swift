@@ -1,6 +1,6 @@
 // swift-tools-version: 6.0
 //
-// Package.swift — SwiftPM manifest for the ITB Swift binding.
+// SwiftPM manifest for the ITB Swift binding.
 //
 // The binding is a thin proxy over the C binding's public surface
 // (bindings/c/include/itb3.h, libitb3_c) which in turn links the
@@ -39,6 +39,7 @@ let package = Package(
         .library(name: "LibItb3", targets: ["Itb3"]),
         .executable(name: "Itb3Bench", targets: ["Itb3Bench"]),
         .executable(name: "eitb", targets: ["eitb"]),
+        .executable(name: "loop", targets: ["loop"]),
     ],
     targets: [
         .systemLibrary(name: "CItb", path: "Sources/CItb"),
@@ -49,6 +50,10 @@ let package = Package(
         ),
         .executableTarget(name: "Itb3Bench", dependencies: ["Itb3"]),
         .executableTarget(name: "eitb", dependencies: ["Itb3"]),
+        // The stress harness keeps its sources next to eitb/ and
+        // benches/ rather than under Sources/, so the target carries
+        // an explicit path.
+        .executableTarget(name: "loop", dependencies: ["Itb3"]),
         .testTarget(name: "Itb3Tests", dependencies: ["Itb3"]),
     ]
 )

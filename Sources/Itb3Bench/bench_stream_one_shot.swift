@@ -1,8 +1,8 @@
 /*
- * bench_stream_one_shot.swift — encryptStreamOneShot throughput vs
- * plaintext size (streaming Non-AEAD profile) at 1 MiB / 16 MiB /
- * 64 MiB. Times the whole-buffer path (a single FFI round trip
- * through the Pipeline's stream chain).
+ * encryptStreamOneShot throughput vs plaintext size (streaming
+ * Non-AEAD profile) at 1 MiB / 16 MiB / 64 MiB. Times the
+ * whole-buffer path (a single FFI round trip through the
+ * Pipeline's stream chain).
  */
 
 import Foundation

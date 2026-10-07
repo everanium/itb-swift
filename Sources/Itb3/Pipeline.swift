@@ -1,5 +1,5 @@
 /*
- * Pipeline.swift — Triple Pipeline session over itb_pipeline.
+ * Triple Pipeline session over itb_pipeline.
  *
  * A reference type: ARC finalisation calls itb_pipeline_free (which
  * runs Close Go-side, zeroing key material). Buffer sizing — the
@@ -105,7 +105,7 @@ public final class Pipeline: @unchecked Sendable {
     /// Sets the worker cap for every subsequent cipher call. `n` is
     /// clamped by libitb3 (`<= 0` selects auto, `> 256` becomes 256);
     /// only the handle state is reported. The cap is per-machine and
-    /// never travels in the blob.
+    /// never written to the blob.
     public func maxWorkers(_ n: Int32) throws {
         try check(itb_pipeline_max_workers(raw, n))
     }

@@ -1,6 +1,6 @@
 /*
- * StreamStickyTests.swift — a decrypt session fed a tampered wire
- * fails with a sticky MAC failure.
+ * A decrypt session fed a tampered wire fails with a sticky MAC
+ * failure.
  *
  * A single bit flip can land in the container's CSPRNG residue —
  * over-sized container area that carries no payload — where the

@@ -1,7 +1,7 @@
 /*
- * TestUtil.swift — shared payload helper for the binding's
- * integration tests (deterministic xorshift fill, mirroring the C
- * suite's test_payload).
+ * Shared payload helper for the binding's integration tests
+ * (deterministic xorshift fill, mirroring the C suite's
+ * test_payload).
  */
 
 import Foundation

@@ -1,8 +1,7 @@
 /*
- * ErrorsTests.swift — error-mapping surface: opaque-string relay,
- * unknown profile, profile registration with an 8-entry `hashes`
- * constellation, duplicate registration, and the mapped status
- * codes.
+ * Error-mapping surface: opaque-string relay, unknown profile,
+ * profile registration with an 8-entry `hashes` constellation,
+ * duplicate registration, and the mapped status codes.
  */
 
 import Foundation
@@ -84,10 +83,22 @@ final class ErrorsTests: XCTestCase {
         }
     }
 
-    func testStatusLabels() {
-        XCTAssertFalse(Status.ok.label.isEmpty)
-        XCTAssertFalse(Status.macFailure.label.isEmpty)
-        XCTAssertFalse(Status.internalError.label.isEmpty)
+    func testErrorDescriptionCarriesTheLibrarySentence() throws {
+        // The description is the numeric code plus whatever the library
+        // put in its last-error slot: a finished sentence naming the
+        // class of failure and, where there is one, the instance. The
+        // binding composes nothing beyond the code, so a description
+        // that lost the sentence means the slot was not read.
+        var mismatch = try lookup(name: "singlemsg-triple-nomac-v1")
+        mismatch.name = "some-other-name"
+        XCTAssertThrowsError(
+            try register(name: "swift-binding-test-description", profile: mismatch)
+        ) { error in
+            let text = String(describing: error)
+            XCTAssertTrue(text.contains("ITB status"), text)
+            XCTAssertTrue(text.contains(":"), text)
+            XCTAssertGreaterThan(text.count, "ITB status 4".count, text)
+        }
     }
 
     func testFreedStreamRejectsUse() throws {
@@ -97,6 +108,21 @@ final class ErrorsTests: XCTestCase {
         session.free() // idempotent
         XCTAssertThrowsError(try session.write(Data([1, 2, 3]))) { error in
             XCTAssertEqual((error as? ItbError)?.status, .badInput)
+        }
+    }
+
+    func testUnknownDrbg() throws {
+        // An unknown drbg name is relayed to Go and rejected there as
+        // an unknown recipe primitive, with the token in the sentence.
+        let opts = try Opts().set("drbg", "nope")
+        XCTAssertThrowsError(
+            try Pipeline(profile: "singlemsg-triple-mac-v1", opts: opts)
+        ) { error in
+            guard let err = error as? ItbError else {
+                return XCTFail("not an ItbError: \(error)")
+            }
+            XCTAssertEqual(err.status, .recipePrimitiveUnknown)
+            XCTAssertTrue(err.message.contains("nope"), err.message)
         }
     }
 }

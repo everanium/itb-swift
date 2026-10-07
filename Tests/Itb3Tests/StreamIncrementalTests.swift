@@ -1,7 +1,7 @@
 /*
- * StreamIncrementalTests.swift — explicit write / end / read round
- * trip with pathological batch sizes (17-byte feed, 23-byte drain),
- * finishing the drain through the session's AsyncSequence.
+ * Explicit write / end / read round trip with pathological batch
+ * sizes (17-byte feed, 23-byte drain), finishing the drain through
+ * the session's AsyncSequence.
  */
 
 import Foundation

@@ -21,7 +21,7 @@ on `BUFFER_TOO_SMALL`) lives in the C layer; the Swift layer moves
 opaque bytes and relays status codes.
 
 The public surface is one `Pipeline` class (init / load / save /
-rekey / maxWorkers, Single Message encrypt / decrypt, whole-buffer
+rekey / maxWorkers, Single Message encrypt / decrypt, one-shot
 stream entries (`encryptStreamOneShot` and the pumps), incremental
 `EncryptStream` / `DecryptStream` sessions with
 write / end / read), an `Opts` query-string builder for init
@@ -127,6 +127,30 @@ The same rotation is available on the receiver side as a master
 override pair on load: `Pipeline(load: blob, permMaster: perm,
 wrapMaster: wrap)` reopens the blob with fresh masters folded in.
 
+The same calls carry `async` variants (`try await
+sender.encryptMessage(...)`) that hop the blocking FFI call onto a
+background task, and `Result`-shaped variants
+(`encryptMessageResult` returning `Result<Data, ItbError>`).
+
+`encryptStreamOneShot` / `decryptStreamOneShot` put a whole
+in-memory payload through the stream chain in a single call. For
+bounded-memory streaming, `encryptStreamPump` /
+`decryptStreamPump` move a whole buffer through an incremental
+session; the explicit `encryptStream()` / `decryptStream()`
+sessions expose `write` / `end` / `read` for caller-driven loops
+plus a `chunks()` `AsyncSequence` for the drain side. The
+transform shape consumes any async chunk source:
+
+```swift
+for try await wireChunk in sender.encryptStream(from: plainChunks) {
+    // forward wireChunk
+}
+```
+
+Profile names, opts keys, and every primitive name are validated by
+the Go side; a rejected string surfaces as a thrown `ItbError`
+carrying the status code plus the `itb_last_error()` diagnostic.
+
 ## Persisting sessions
 
 The blob returned by `save()` is a self-describing session bundle: it
@@ -155,12 +179,10 @@ library directly and register the same custom primitive under the
 same name before opening. Attempting to load such a blob through this
 binding throws `ItbError` with `.recipePrimitiveUnknown`.
 
-**Runtime tuning.** The worker cap is per-machine and never travels
-in the blob; the receiver may pick its own after load:
-
-```swift
-try receiver.maxWorkers(4)   // clamped by libitb3; <= 0 selects auto
-```
+**Runtime tuning.** `receiver.maxWorkers(n)` sets the worker cap for
+every subsequent cipher call (`n <= 0` selects auto, `n > 256` is
+clamped to 256); the receiver may pick its own worker cap after
+load — the cap is per-machine and never written to the blob.
 
 ## Profile registry
 
@@ -177,30 +199,6 @@ custom.outerCipher = ""
 try register(name: "my-nomac-plain", profile: custom)
 assert(try profiles().contains("my-nomac-plain"))
 ```
-
-The same calls carry `async` variants (`try await
-sender.encryptMessage(...)`) that hop the blocking FFI call onto a
-background task, and `Result`-shaped variants
-(`encryptMessageResult` returning `Result<Data, ItbError>`).
-
-`encryptStreamOneShot` / `decryptStreamOneShot` put a whole
-in-memory payload through the stream chain in a single call. For
-bounded-memory streaming, `encryptStreamPump` /
-`decryptStreamPump` move a whole buffer through an incremental
-session; the explicit `encryptStream()` / `decryptStream()`
-sessions expose `write` / `end` / `read` for caller-driven loops
-plus a `chunks()` `AsyncSequence` for the drain side. The
-transform shape consumes any async chunk source:
-
-```swift
-for try await wireChunk in sender.encryptStream(from: plainChunks) {
-    // forward wireChunk
-}
-```
-
-Profile names, opts keys, and every primitive name are validated by
-the Go side; a rejected string surfaces as a thrown `ItbError`
-carrying the status code plus the `itb_last_error()` diagnostic.
 
 ## Memory
 
@@ -235,14 +233,16 @@ tree.
 ## Benchmarking
 
 ```bash
-./bindings/swift/run_bench.sh            # both shapes
-./bindings/swift/run_bench.sh message    # Single Message only
-./bindings/swift/run_bench.sh stream     # stream pump only
+./bindings/swift/run_bench.sh                    # all shapes
+./bindings/swift/run_bench.sh message            # Single Message only
+./bindings/swift/run_bench.sh stream             # stream pump only
+./bindings/swift/run_bench.sh stream_one_shot    # one-shot stream only
 ```
 
-Micro-benches: `message` (encryptMessage) and `stream_pump`
-(encryptStreamPump) throughput at 1 MiB / 16 MiB / 64 MiB, reported
-as an MB/s table on stdout. The runner exports
+Micro-benches: `message` (encryptMessage), `stream_pump`
+(encryptStreamPump), and `stream_one_shot` (encryptStreamOneShot)
+throughput at 1 MiB / 16 MiB / 64 MiB, reported as an MB/s table on
+stdout. The runner exports
 `ITB_GOMEMLIMIT=4GiB` + `ITB_GOGC=100` defaults (respecting caller
 overrides) and the bench main applies the same caps
 programmatically; the bench shape follows the fleet-canonical
@@ -258,6 +258,27 @@ decrypts payloads directly on disk (`-i` / `-o`) or through stdin /
 stdout, rotates outer masters, and inspects stored blobs. See
 [`cmd/itb3/README.md`](https://github.com/everanium/itb/blob/main/cmd/itb3/README.md) for the full
 subcommand reference.
+
+## loop utility
+
+A long-run stress harness under `bindings/swift/Sources/loop/` holds one
+Pipeline handle for minutes, cycles encrypt → decrypt → compare
+round-trips through it, rotates the outer masters and reopens the
+handle from its session blob on a schedule, and reports whether the
+process survived with every byte intact. It is the binding-side
+counterpart of the Go harness under `tools/loop`: same flags, same
+round structure, same summary in both renderings.
+
+```bash
+cd bindings/swift && swift build -c release --product loop
+./run_loop.sh --duration 2m --shape both
+```
+
+`.build/release/loop -h` lists every flag. Concurrency mode:
+**shared-handle** — POSIX threads call into one Pipeline handle
+concurrently, which libitb3 permits once the handle is constructed
+and the binding's `Pipeline` class allows (it is `Sendable` and adds
+no lock of its own), so `--goroutines` is the thread count verbatim.
 
 ## eitb utility
 

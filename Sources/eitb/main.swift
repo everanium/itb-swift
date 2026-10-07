@@ -1,11 +1,11 @@
 /*
- * eitb — command-line demonstrator for the ITB Swift binding.
+ * Command-line demonstrator for the ITB Swift binding.
  *
  * Subcommands:
  *
- *   eitb version                                   library + binding versions
- *   eitb profiles                                  registered profile catalogue
- *   eitb encrypt <profile> <in-file> <out-file>    Single Message encrypt
+ *   eitb version
+ *   eitb profiles
+ *   eitb encrypt <profile> <in-file> <out-file>
  *   eitb decrypt <profile> <blob-hex> <in-file> <out-file>
  *
  * `encrypt` prints the session blob to stderr as hex; feed that hex
@@ -47,8 +47,9 @@ func readFile(_ path: String) -> Data? {
 }
 
 // Profiles whose canonical name begins with "streaming-" route
-// through the one-shot streaming buffered pair instead of the Single
-// Message pair.
+// through the buffered stream-pump pair instead of the Single
+// Message pair. The pump drives an incremental session internally
+// and hands back the whole output in one buffer.
 func isStreamingProfile(_ profile: String) -> Bool {
     profile.hasPrefix("streaming-")
 }

@@ -1,5 +1,5 @@
 /*
- * EncryptStream.swift — incremental stream sessions over itb_stream.
+ * Incremental stream sessions over itb_stream.
  *
  * StreamSession is the shared base for both directions: a dumb byte
  * pump (write / end / read) whose chunking, MAC, envelope, and wire

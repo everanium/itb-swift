@@ -1,7 +1,7 @@
 /*
- * StreamPumpTests.swift — round trip through the whole-buffer stream
- * pumps on a Streaming AEAD profile at 1 MiB, plus the AsyncSequence
- * transform round trip over the same profile.
+ * Round trip through the whole-buffer stream pumps on a Streaming
+ * AEAD profile at 1 MiB, plus the AsyncSequence transform round trip
+ * over the same profile.
  */
 
 import Foundation

@@ -1,5 +1,5 @@
 /*
- * DecryptStream.swift — receive-side incremental stream session.
+ * Receive-side incremental stream session.
  *
  * Wire goes in through write, plaintext comes out through read. The
  * shared pump machinery lives in StreamSession (EncryptStream.swift);

@@ -1,5 +1,5 @@
 /*
- * Opts.swift — URL-query opts builder over itb_opts.
+ * URL-query opts builder over itb_opts.
  *
  * Accumulates key=value pairs into the query string consumed by
  * Pipeline(profile:opts:). Profile registration takes a Profile

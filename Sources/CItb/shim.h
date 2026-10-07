@@ -1,6 +1,6 @@
 /*
- * shim.h — bridges the C binding's public header into the Swift
- * module `CItb`. The relative include resolves inside the monorepo
+ * Bridges the C binding's public header into the Swift module
+ * `CItb`. The relative include resolves inside the monorepo
  * (bindings/swift/Sources/CItb -> bindings/c/include); the Swift
  * binding is compiled in-repo against the C binding it proxies.
  */

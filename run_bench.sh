@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# run_bench.sh -- micro-benchmark runner for the Swift binding.
-# Builds libitb3.so + the C binding library + the Swift package, then
-# runs the Itb3Bench executable: encryptMessage, encryptStreamPump,
-# and encryptStreamOneShot throughput at 1 MiB / 16 MiB / 64 MiB as
-# an MB/s table on stdout.
+# Micro-benchmark runner for the Swift binding. Builds libitb3.so +
+# the C binding library + the Swift package, then runs the Itb3Bench
+# executable: encryptMessage, encryptStreamPump, and
+# encryptStreamOneShot throughput at 1 MiB / 16 MiB / 64 MiB as an
+# MB/s table on stdout.
 #
 # Usage:
 #   ./run_bench.sh [message|stream|stream_one_shot|all]   # default: all

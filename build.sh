@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# build.sh -- one-step build for the Swift binding: libitb3.so + the C
-# binding library (the bridged layer) + the Swift package in release
+# One-step build for the Swift binding: libitb3.so + the C binding
+# library (the bridged layer) + the Swift package in release
 # configuration. Prerequisites (Go, a C11 compiler, GNU make, Swift
 # 6+) must be installed separately; see README.md "Prerequisites".
 #

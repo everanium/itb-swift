@@ -1,6 +1,6 @@
 /*
- * PersistTests.swift — persistence surface: save / saveF / load /
- * loadFile round trips, inspect, lookup / profiles, maxWorkers.
+ * Persistence surface: save / saveF / load / loadFile round
+ * trips, inspect, lookup / profiles, maxWorkers.
  */
 
 import Foundation
@@ -49,6 +49,7 @@ final class PersistTests: XCTestCase {
         var recipe = prof
         recipe.nonceBits = nil
         recipe.barrierFill = nil
+        recipe.containerMode = nil
         XCTAssertEqual(recipe, try lookup(name: "singlemsg-triple-mac-v1"))
         XCTAssertThrowsError(try inspect(Data("not a blob".utf8))) { error in
             XCTAssertEqual((error as? ItbError)?.status, .badInput)
@@ -114,5 +115,45 @@ final class PersistTests: XCTestCase {
         let receiver = try Pipeline(load: try sender.save())
         try receiver.maxWorkers(1)
         try roundTrip(sender, receiver, "workers")
+    }
+
+    func testDrbgRoundTripsAndInspectReportsIt() throws {
+        for name in ["csprng", "aesitb128"] {
+            let opts = try Opts().set("drbg", name)
+            let sender = try Pipeline(profile: "singlemsg-triple-mac-v1", opts: opts)
+            let blob = try sender.save()
+            let receiver = try Pipeline(load: blob)
+            try roundTrip(sender, receiver, name)
+            try roundTrip(receiver, sender, name)
+            let prof = try inspect(blob)
+            XCTAssertEqual(prof.drbg, name)
+            XCTAssertTrue(try prof.toJSON().contains("\"drbg\":\"\(name)\""))
+        }
+    }
+
+    func testDrbgDefaultIsAbsent() throws {
+        let sender = try Pipeline(profile: "singlemsg-triple-mac-v1")
+        let prof = try inspect(try sender.save())
+        XCTAssertEqual(prof.drbg, "")
+        XCTAssertFalse(try prof.toJSON().contains("drbg"))
+        let registry = try lookup(name: "singlemsg-triple-mac-v1")
+        XCTAssertEqual(registry.drbg, "")
+        XCTAssertFalse(try registry.toJSON().contains("drbg"))
+    }
+
+    func testDrbgSurvivesRegisterCopy() throws {
+        // drbg is a recipe field: an inspected record with the name and
+        // the inspection-only fields cleared re-registers and keeps it.
+        let opts = try Opts().set("drbg", "csprng")
+        let sender = try Pipeline(profile: "singlemsg-triple-mac-v1", opts: opts)
+        var recipe = try inspect(try sender.save())
+        recipe.name = ""
+        recipe.nonceBits = nil
+        recipe.barrierFill = nil
+        recipe.containerMode = nil
+        try register(name: "swift-binding-test-drbg-copy", profile: recipe)
+        let looked = try lookup(name: "swift-binding-test-drbg-copy")
+        XCTAssertEqual(looked.drbg, "csprng")
+        XCTAssertTrue(try looked.toJSON().contains("\"drbg\":\"csprng\""))
     }
 }

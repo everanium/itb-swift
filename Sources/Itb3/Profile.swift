@@ -1,7 +1,6 @@
 /*
- * Profile.swift — the profile record: the JSON object libitb3 accepts
- * in `register`, returns from `lookup` and `inspect`, and embeds in
- * every blob.
+ * The profile record: the JSON object libitb3 accepts in `register`,
+ * returns from `lookup` and `inspect`, and embeds in every blob.
  *
  * The record is a plain data carrier: no field is validated on the
  * Swift side. Field rules (mode / width / hash-width agreement, MAC
@@ -16,12 +15,12 @@ import Foundation
 /// profile JSON object; optional keys are omitted when empty / zero
 /// and decode as their defaults when absent.
 ///
-/// `nonceBits` and `barrierFill` are inspection-only: they are not
-/// part of the profile recipe, stay `nil` on a record from `lookup`
-/// or built by hand, and are populated only on a record from
-/// `inspect`, where libitb3 reads them from the blob's runtime globals
-/// snapshot. libitb3 rejects a `register` payload that carries either
-/// key, so clear both before handing an inspected record to
+/// `nonceBits`, `barrierFill` and `containerMode` are inspection-only:
+/// they are not part of the profile recipe, stay `nil` on a record
+/// from `lookup` or built by hand, and are populated only on a record
+/// from `inspect`, where libitb3 reads them from the blob's inner
+/// snapshot. libitb3 rejects a `register` payload that carries any of
+/// the keys, so clear them before handing an inspected record to
 /// `register`.
 public struct Profile: Codable, Equatable, Sendable {
     /// Registry label. Empty on a record built by hand; filled by
@@ -47,6 +46,14 @@ public struct Profile: Codable, Equatable, Sendable {
     /// DRBG barrier fill margin, read from the blob's runtime
     /// globals. Same inspection-only lifecycle as `nonceBits`.
     public var barrierFill: Int?
+    /// Container floor sizing mode, read from the blob's inner mode
+    /// field: 1 per-region, 2 per-container. Same inspection-only
+    /// lifecycle as `nonceBits`.
+    public var containerMode: Int?
+    /// DRBG fill primitive for container noise and lane residue on
+    /// encrypt; empty for the auto tier. A recipe field, unlike the
+    /// inspection-only keys: it survives a `register` round trip.
+    public var drbg: String = ""
     /// MAC name; empty for No MAC modes.
     public var macName: String = ""
     /// MAC tag stub size; 0 for the profile default.
@@ -73,6 +80,8 @@ public struct Profile: Codable, Equatable, Sendable {
         case keyBits = "keybits"
         case nonceBits = "nonce_bits"
         case barrierFill = "barrier_fill"
+        case containerMode = "container_mode"
+        case drbg
         case macName = "mac"
         case tagStubSize = "tagstub"
         case chunkSize = "chunk"
@@ -93,6 +102,8 @@ public struct Profile: Codable, Equatable, Sendable {
         keyBits = try c.decodeIfPresent(Int.self, forKey: .keyBits) ?? 0
         nonceBits = try c.decodeIfPresent(Int.self, forKey: .nonceBits)
         barrierFill = try c.decodeIfPresent(Int.self, forKey: .barrierFill)
+        containerMode = try c.decodeIfPresent(Int.self, forKey: .containerMode)
+        drbg = try c.decodeIfPresent(String.self, forKey: .drbg) ?? ""
         macName = try c.decodeIfPresent(String.self, forKey: .macName) ?? ""
         tagStubSize = try c.decodeIfPresent(Int.self, forKey: .tagStubSize) ?? 0
         chunkSize = try c.decodeIfPresent(Int.self, forKey: .chunkSize) ?? 0
@@ -113,6 +124,8 @@ public struct Profile: Codable, Equatable, Sendable {
         try c.encode(keyBits, forKey: .keyBits)
         try c.encodeIfPresent(nonceBits, forKey: .nonceBits)
         try c.encodeIfPresent(barrierFill, forKey: .barrierFill)
+        try c.encodeIfPresent(containerMode, forKey: .containerMode)
+        if !drbg.isEmpty { try c.encode(drbg, forKey: .drbg) }
         if !macName.isEmpty { try c.encode(macName, forKey: .macName) }
         if tagStubSize != 0 { try c.encode(tagStubSize, forKey: .tagStubSize) }
         if chunkSize != 0 { try c.encode(chunkSize, forKey: .chunkSize) }

@@ -1,6 +1,6 @@
 /*
- * bench_stream.swift — encryptStreamPump throughput vs plaintext
- * size (streaming Non-AEAD profile) at 1 MiB / 16 MiB / 64 MiB.
+ * encryptStreamPump throughput vs plaintext size (streaming
+ * Non-AEAD profile) at 1 MiB / 16 MiB / 64 MiB.
  */
 
 import Foundation

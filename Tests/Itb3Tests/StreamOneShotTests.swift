@@ -1,7 +1,7 @@
 /*
- * StreamOneShotTests.swift — round trip through the whole-buffer
- * stream one-shot pair on a Streaming AEAD profile, wire
- * interchangeability with the stream pumps, and tamper rejection.
+ * Round trip through the whole-buffer stream one-shot pair on a
+ * Streaming AEAD profile, wire interchangeability with the stream
+ * pumps, and tamper rejection.
  */
 
 import Foundation

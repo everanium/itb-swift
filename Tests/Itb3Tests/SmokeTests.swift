@@ -1,7 +1,7 @@
 /*
- * SmokeTests.swift — Init → save → load → encryptMessage →
- * decryptMessage round trip, plus the Result-shaped and async
- * variants of the same path.
+ * Init → save → load → encryptMessage → decryptMessage round
+ * trip, plus the Result-shaped and async variants of the same
+ * path.
  */
 
 import Foundation

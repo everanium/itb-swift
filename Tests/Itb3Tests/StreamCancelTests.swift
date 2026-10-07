@@ -1,7 +1,7 @@
 /*
- * StreamCancelTests.swift — freeing an encrypt session mid-flight
- * (without end) releases resources cleanly and leaves the Pipeline
- * usable; ARC deinit covers the implicit-release path.
+ * Freeing an encrypt session mid-flight (without end) releases
+ * resources cleanly and leaves the Pipeline usable; ARC deinit
+ * covers the implicit-release path.
  */
 
 import Foundation

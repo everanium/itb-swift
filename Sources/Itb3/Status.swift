@@ -1,5 +1,5 @@
 /*
- * Status.swift — Swift mirror of the C binding's itb_status table.
+ * Swift mirror of the C binding's itb_status table.
  *
  * The numeric values track cmd/cshared/internal/capi/errors.go via
  * bindings/c/include/itb3.h. Codes 11..13 are the Triple blob-record
@@ -47,8 +47,4 @@ public enum Status: Int32, Sendable, Equatable, Hashable {
         self = Status(rawValue: Int32(bitPattern: raw.rawValue)) ?? .internalError
     }
 
-    /// Short static label for the status code (via `itb_status_str`).
-    public var label: String {
-        String(cString: itb_status_str(itb_status(rawValue: UInt32(bitPattern: rawValue))))
-    }
 }

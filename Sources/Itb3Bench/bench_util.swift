@@ -1,6 +1,6 @@
 /*
- * bench_util.swift — shared timing + reporting helpers for the Swift
- * binding micro-benchmarks. Wall-clock via DispatchTime; output is a
+ * Shared timing + reporting helpers for the Swift binding
+ * micro-benchmarks. Wall-clock via DispatchTime; output is a
  * fixed-width table:
  *
  *   bench             size     mb_per_sec
