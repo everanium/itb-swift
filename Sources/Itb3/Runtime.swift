@@ -8,7 +8,7 @@ import Foundation
 
 /// Binding version. Tracks the Swift wrapper; `ItbRuntime.version`
 /// reports the underlying libitb3 library version.
-public let itbSwiftVersion = "0.5.1"
+public let itbSwiftVersion = "0.5.5"
 
 /// Runs a `char **json_out` C entry and hands back the JSON string,
 /// releasing the C buffer via itb_string_free.
@@ -63,7 +63,7 @@ public func hashNames() throws -> [String] {
 }
 
 public enum ItbRuntime {
-    /// The libitb3 library version string (e.g. "0.5.1").
+    /// The libitb3 library version string (e.g. "0.5.5").
     public static var version: String {
         guard let v = itb_version() else {
             return ""
