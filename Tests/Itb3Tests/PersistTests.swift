@@ -63,21 +63,26 @@ final class PersistTests: XCTestCase {
         let prof = try inspect(try sender.save())
         XCTAssertEqual(prof.nonceBits, 512)
         XCTAssertEqual(prof.barrierFill, 1)
+        XCTAssertEqual(prof.containerMode, 1)
 
         // Per-Pipeline overrides travel through the blob into inspect.
-        let opts = try Opts(["nonceBits": "256", "barrierFill": "4"])
+        let opts = try Opts(["mode": "2", "nonceBits": "256", "barrierFill": "4"])
         let tuned = try Pipeline(profile: "singlemsg-triple-mac-v1", opts: opts)
         let tunedProf = try inspect(try tuned.save())
+        XCTAssertEqual(tunedProf.containerMode, 2)
         XCTAssertEqual(tunedProf.nonceBits, 256)
         XCTAssertEqual(tunedProf.barrierFill, 4)
+        XCTAssertTrue(try tunedProf.toJSON().contains("\"container_mode\":2"))
         XCTAssertTrue(try tunedProf.toJSON().contains("\"nonce_bits\":256"))
         XCTAssertTrue(try tunedProf.toJSON().contains("\"barrier_fill\":4"))
 
         // The registry entry is the recipe alone — neither field is
         // part of it, so both read as absent rather than as zero.
         let registry = try lookup(name: "singlemsg-triple-mac-v1")
+        XCTAssertNil(registry.containerMode)
         XCTAssertNil(registry.nonceBits)
         XCTAssertNil(registry.barrierFill)
+        XCTAssertFalse(try registry.toJSON().contains("container_mode"))
         XCTAssertFalse(try registry.toJSON().contains("nonce_bits"))
         XCTAssertFalse(try registry.toJSON().contains("barrier_fill"))
     }

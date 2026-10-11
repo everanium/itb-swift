@@ -718,32 +718,6 @@ enum LoopMain {
         Log.line(line)
     }
 
-    /// Sets the inner blob's "mode" field of a wrap-layer session blob
-    /// to targetMode (1 = per-region, 2 = per-container) in place. The
-    /// wrap layer's profile record carries its own "mode" (a string),
-    /// so the search starts at the inner blob ("ib"); both shipped
-    /// modes are one digit wide, so the blob length does not change.
-    /// Returns false when the inner blob or its mode field is not
-    /// found.
-    static func editInnerBlobMode(_ blob: inout Data, _ targetMode: Int) -> Bool {
-        guard let ib = blob.range(of: Data("\"ib\":{".utf8)),
-              let mode = blob.range(of: Data("\"mode\":".utf8), in: ib.upperBound..<blob.endIndex) else {
-            return false
-        }
-        let at = mode.upperBound
-        guard at + 1 < blob.endIndex else {
-            return false
-        }
-        let digit = UInt8(ascii: "0")
-        let nine = UInt8(ascii: "9")
-        if blob[at] < UInt8(ascii: "1") || blob[at] > UInt8(ascii: "2")
-            || (blob[at + 1] >= digit && blob[at + 1] <= nine) {
-            return false
-        }
-        blob[at] = digit + UInt8(targetMode)
-        return true
-    }
-
     /// Constructs one Pipeline against profile with every flag-carried
     /// override in the opts string (zero values included — the shared
     /// library treats zero as "profile default"), then obtains the
@@ -757,6 +731,7 @@ enum LoopMain {
             return nil
         }
         do {
+            try opts.set("mode", "\(cfg.blobMode)")
             try opts.set("innerHash", cfg.hash)
             try opts.set("macName", cfg.mac)
             try opts.set("withParallax", cfg.parallax ? "true" : "false")
@@ -782,7 +757,7 @@ enum LoopMain {
             }
         }
 
-        var pipe: Pipeline
+        let pipe: Pipeline
         do {
             pipe = try Pipeline(profile: profile, opts: opts)
         } catch let e as ItbError {
@@ -792,7 +767,7 @@ enum LoopMain {
             Log.err("Init(\(profile)): \(error)")
             return nil
         }
-        var blob: Data
+        let blob: Data
         do {
             blob = try pipe.save()
         } catch let e as ItbError {
@@ -801,25 +776,6 @@ enum LoopMain {
         } catch {
             Log.err("Save(\(profile)): \(error)")
             return nil
-        }
-        if cfg.blobMode == 2 {
-            // The sizing mode is not an Opts knob: the Init blob is
-            // edited and the pipeline reopened from it, so the retained
-            // blob (the one blob-cycle reopens from) carries the edited
-            // mode.
-            if !editInnerBlobMode(&blob, 2) {
-                Log.err("rewrite blob mode: inner blob mode field not found")
-                return nil
-            }
-            do {
-                pipe = try Pipeline(load: blob)
-            } catch let e as ItbError {
-                Log.err("reload Mode 2 blob: status \(e.code): \(e.message)")
-                return nil
-            } catch {
-                Log.err("reload Mode 2 blob: \(error)")
-                return nil
-            }
         }
         logPipelineInitialised(profile, blob)
         return (pipe, blob)
