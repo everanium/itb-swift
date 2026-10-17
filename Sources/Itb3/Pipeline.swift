@@ -35,6 +35,64 @@ public final class Pipeline: @unchecked Sendable {
         self.init(raw: out)
     }
 
+    /// Deterministically constructs a Pipeline from eight caller-supplied
+    /// master keys (one per canonical seed slot 0..7) against the named
+    /// profile and options. The eight master keys must come from
+    /// independent entropy or key-agreement sources; never derive all
+    /// eight keys from a single secret or a single KDF parent key.
+    public convenience init(profile: String, masters: [Data], opts: Opts? = nil) throws {
+        let count = masters.count
+        var lens = [Int](repeating: 0, count: count)
+        var totalLen = 0
+        for (i, m) in masters.enumerated() {
+            lens[i] = m.count
+            totalLen += m.count
+        }
+        var flat = [UInt8](repeating: 0, count: max(totalLen, 1))
+        defer {
+            flat.withUnsafeMutableBufferPointer { dst in
+                if let base = dst.baseAddress {
+                    memset(base, 0, dst.count)
+                }
+            }
+        }
+        flat.withUnsafeMutableBufferPointer { dst in
+            var offset = 0
+            for m in masters where !m.isEmpty {
+                m.copyBytes(to: dst.baseAddress!.advanced(by: offset), count: m.count)
+                offset += m.count
+            }
+        }
+        var out: OpaquePointer?
+        let rc: itb_status = flat.withUnsafeBytes { flatBuf in
+            lens.withUnsafeBufferPointer { lensBuf in
+                itb_pipeline_init_keys(
+                    profile,
+                    opts?.raw,
+                    totalLen > 0 ? flatBuf.baseAddress : nil,
+                    totalLen,
+                    count > 0 ? lensBuf.baseAddress : nil,
+                    count,
+                    &out
+                )
+            }
+        }
+        try check(rc)
+        guard let out else {
+            throw ItbError(c: ITB_STATUS_INTERNAL)
+        }
+        self.init(raw: out)
+    }
+
+    /// Deterministically constructs a Pipeline from eight caller-supplied
+    /// master keys (one per canonical seed slot 0..7) against the named
+    /// profile and options. The eight master keys must come from
+    /// independent entropy or key-agreement sources; never derive all
+    /// eight keys from a single secret or a single KDF parent key.
+    public static func initKeys(profile: String, masters: [Data], opts: Opts? = nil) throws -> Pipeline {
+        try Pipeline(profile: profile, masters: masters, opts: opts)
+    }
+
     /// Reconstructs a Pipeline from a blob produced by `save` / `rekey`.
     /// Omit the masters to use the blob-embedded pair; supply both to
     /// override them (the pair is validated by libitb3). The profile

@@ -24,6 +24,26 @@ final class PersistTests: XCTestCase {
         XCTAssertEqual(try receiver.save(), blob, "load must retain the blob bytes")
     }
 
+    func testInitKeysDeterminismAndErrors() throws {
+        let masters = (0..<8).map { i in Data(repeating: UInt8(0x11 * (i + 1)), count: 32) }
+        let p1 = try Pipeline.initKeys(profile: "singlemsg-triple-mac-v1", masters: masters)
+        let p2 = try Pipeline(profile: "singlemsg-triple-mac-v1", masters: masters)
+        XCTAssertEqual(try p1.save(), try p2.save())
+        try roundTrip(p1, p2, "initKeys")
+
+        var dupMasters = masters
+        dupMasters[1] = dupMasters[0]
+        XCTAssertThrowsError(try Pipeline.initKeys(profile: "singlemsg-triple-mac-v1", masters: dupMasters)) { error in
+            XCTAssertEqual((error as? ItbError)?.status, .badInput)
+        }
+
+        var shortMasters = masters
+        shortMasters[0] = Data(repeating: 0x11, count: 8)
+        XCTAssertThrowsError(try Pipeline.initKeys(profile: "singlemsg-triple-mac-v1", masters: shortMasters)) { error in
+            XCTAssertEqual((error as? ItbError)?.status, .badInput)
+        }
+    }
+
     func testLoadWithMasterOverrides() throws {
         let sender = try Pipeline(profile: "singlemsg-triple-mac-v1")
         let blob = try sender.save()
