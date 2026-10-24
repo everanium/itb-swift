@@ -149,7 +149,7 @@ public final class Pipeline: @unchecked Sendable {
     /// init blob, or the bytes of the latest `rekey`). A closed
     /// Pipeline throws `.tripleClosed`.
     public func save() throws -> Data {
-        try takeBytes { out, outLen in
+        try takeSecretBytes { out, outLen in
             itb_pipeline_save(raw, out, outLen)
         }
     }
@@ -175,7 +175,7 @@ public final class Pipeline: @unchecked Sendable {
     public func rekey(permMaster: Data = Data(), wrapMaster: Data = Data()) throws -> Data {
         try permMaster.withItbBytes { permPtr, permLen in
             try wrapMaster.withItbBytes { wrapPtr, wrapLen in
-                try takeBytes { out, outLen in
+                try takeSecretBytes { out, outLen in
                     itb_pipeline_rekey(raw,
                                        permLen > 0 ? permPtr : nil, permLen,
                                        wrapLen > 0 ? wrapPtr : nil, wrapLen,
@@ -402,6 +402,27 @@ func takeBytes(
     var outLen = 0
     try check(call(&out, &outLen))
     defer { itb_bytes_free(out) }
+    guard let out, outLen > 0 else {
+        return Data()
+    }
+    return Data(bytes: out, count: outLen)
+}
+
+/// Cold-path counterpart of `takeBytes` for session blobs (`save` /
+/// `rekey`): zeroes the C staging buffer before `itb_bytes_free`.
+func takeSecretBytes(
+    _ call: (UnsafeMutablePointer<UnsafeMutablePointer<UInt8>?>,
+             UnsafeMutablePointer<Int>) -> itb_status
+) throws -> Data {
+    var out: UnsafeMutablePointer<UInt8>?
+    var outLen = 0
+    try check(call(&out, &outLen))
+    defer {
+        if let out, outLen > 0 {
+            memset(out, 0, outLen)
+        }
+        itb_bytes_free(out)
+    }
     guard let out, outLen > 0 else {
         return Data()
     }
