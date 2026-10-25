@@ -181,4 +181,44 @@ final class PersistTests: XCTestCase {
         XCTAssertEqual(looked.drbg, "csprng")
         XCTAssertTrue(try looked.toJSON().contains("\"drbg\":\"csprng\""))
     }
+
+    func testInterlockRoundTripsInspectAndRejectsBadValues() throws {
+        let opts = try Opts().set("interlock", "168")
+        let sender = try Pipeline(profile: "singlemsg-triple-mac-v1", opts: opts)
+        let blob = try sender.save()
+        let receiver = try Pipeline(load: blob)
+        try roundTrip(sender, receiver, "interlock 168")
+        try roundTrip(receiver, sender, "interlock 168 reply")
+        let prof = try inspect(blob)
+        XCTAssertEqual(prof.interlock, "168")
+        XCTAssertTrue(try prof.toJSON().contains("\"interlock\":\"168\""))
+
+        let defSender = try Pipeline(profile: "singlemsg-triple-mac-v1")
+        let defProf = try inspect(try defSender.save())
+        XCTAssertEqual(defProf.interlock, "")
+        XCTAssertFalse(try defProf.toJSON().contains("interlock"))
+        let registry = try lookup(name: "singlemsg-triple-mac-v1")
+        XCTAssertEqual(registry.interlock, "")
+        XCTAssertFalse(try registry.toJSON().contains("interlock"))
+
+        var recipe = prof
+        recipe.name = ""
+        recipe.nonceBits = nil
+        recipe.barrierFill = nil
+        recipe.containerMode = nil
+        try register(name: "swift-binding-test-interlock-copy", profile: recipe)
+        let looked = try lookup(name: "swift-binding-test-interlock-copy")
+        XCTAssertEqual(looked.interlock, "168")
+        XCTAssertTrue(try looked.toJSON().contains("\"interlock\":\"168\""))
+
+        let badHashOpts = try Opts(["innerHash": "blake3", "interlock": "168"])
+        XCTAssertThrowsError(try Pipeline(profile: "singlemsg-triple-mac-v1", opts: badHashOpts)) { error in
+            XCTAssertEqual((error as? ItbError)?.status, .badInput)
+        }
+
+        let badWidthOpts = try Opts().set("interlock", "96")
+        XCTAssertThrowsError(try Pipeline(profile: "singlemsg-triple-mac-v1", opts: badWidthOpts)) { error in
+            XCTAssertEqual((error as? ItbError)?.status, .badInput)
+        }
+    }
 }

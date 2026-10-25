@@ -228,6 +228,7 @@ func finalSummary(_ r: RunState, _ elapsedNanos: Int64) -> Int32 {
         o += ",\"blob_mode\":\(cfg.blobMode)"
         o += ",\"drbg\":" + jsonString(cfg.drbg)
         o += ",\"drbg_auto_tier\":" + jsonString(ItbRuntime.drbgAutoTier)
+        o += ",\"interlock\":" + jsonString(cfg.interlock)
         o += ",\"chunk_size_bytes\":\(cfg.chunkSize)"
         o += ",\"barrier_fill\":\(cfg.barrierFill)"
         o += ",\"parallax\":\"\(onOff(cfg.parallax))\""

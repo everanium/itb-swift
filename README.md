@@ -107,6 +107,8 @@ travels inside the blob, so the receiver needs no options of its own:
 let opts = try Opts()
 // Mode 1 per-region (default), Mode 2 per-container (compact VPN tunnel mode)
 try opts.set("mode", "2")
+// Interlocked Barrier chunk width: "48" | "168" ("" = 48-bit default; "168" requires a 512-bit hash)
+try opts.set("interlock", "168")
 try opts.set("chunkSize", "65536")
 try opts.set("withWrapper", "false")
 try opts.set("maxWorkers", "4")

@@ -54,6 +54,9 @@ public struct Profile: Codable, Equatable, Sendable {
     /// encrypt; empty for the auto tier. A recipe field, unlike the
     /// inspection-only keys: it survives a `register` round trip.
     public var drbg: String = ""
+    /// Interlocked Barrier chunk width ("48" | "168"); empty for the
+    /// 48-bit default.
+    public var interlock: String = ""
     /// MAC name; empty for No MAC modes.
     public var macName: String = ""
     /// MAC tag stub size; 0 for the profile default.
@@ -82,6 +85,7 @@ public struct Profile: Codable, Equatable, Sendable {
         case barrierFill = "barrier_fill"
         case containerMode = "container_mode"
         case drbg
+        case interlock
         case macName = "mac"
         case tagStubSize = "tagstub"
         case chunkSize = "chunk"
@@ -104,6 +108,7 @@ public struct Profile: Codable, Equatable, Sendable {
         barrierFill = try c.decodeIfPresent(Int.self, forKey: .barrierFill)
         containerMode = try c.decodeIfPresent(Int.self, forKey: .containerMode)
         drbg = try c.decodeIfPresent(String.self, forKey: .drbg) ?? ""
+        interlock = try c.decodeIfPresent(String.self, forKey: .interlock) ?? ""
         macName = try c.decodeIfPresent(String.self, forKey: .macName) ?? ""
         tagStubSize = try c.decodeIfPresent(Int.self, forKey: .tagStubSize) ?? 0
         chunkSize = try c.decodeIfPresent(Int.self, forKey: .chunkSize) ?? 0
@@ -126,6 +131,7 @@ public struct Profile: Codable, Equatable, Sendable {
         try c.encodeIfPresent(barrierFill, forKey: .barrierFill)
         try c.encodeIfPresent(containerMode, forKey: .containerMode)
         if !drbg.isEmpty { try c.encode(drbg, forKey: .drbg) }
+        if !interlock.isEmpty { try c.encode(interlock, forKey: .interlock) }
         if !macName.isEmpty { try c.encode(macName, forKey: .macName) }
         if tagStubSize != 0 { try c.encode(tagStubSize, forKey: .tagStubSize) }
         if chunkSize != 0 { try c.encode(chunkSize, forKey: .chunkSize) }

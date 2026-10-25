@@ -135,6 +135,7 @@ struct Config {
     var chunkSize: Int64 = 0      // 0 = profile default
     var barrierFill: Int32 = 0    // 0 = profile default
     var drbg = ""                 // DRBG fill primitive; "" = profile default (auto tier)
+    var interlock = ""            // Interlocked Barrier chunk width: 48 | 168; "" = profile default
     var gomaxprocs: Int32 = 0     // 0 = inherit from the environment
     var rekeyEvery: Int64 = 0     // per-worker iterations between rotations; 0 = never
     var blobCycleEvery: Int64 = 0 // per-worker iterations between reopens; 0 = never
@@ -171,6 +172,7 @@ final class RawFlags {
     var gomaxprocs: Int32 = 0
     var goroutines: Int32 = 3
     var hash = "areion512"
+    var interlock = ""
     var iterations: Int64 = 0
     var jsonOutput = false
     var keyBits: Int32 = 0
@@ -222,6 +224,7 @@ final class RawFlags {
         case "drbg": return drbg
         case "duration": return duration
         case "hash": return hash
+        case "interlock": return interlock
         case "mac": return mac
         case "memlimit": return memlimit
         case "memprofile": return memprofile
@@ -277,6 +280,7 @@ final class RawFlags {
             case "drbg": drbg = value
             case "duration": duration = value
             case "hash": hash = value
+            case "interlock": interlock = value
             case "mac": mac = value
             case "memlimit": memlimit = value
             case "memprofile": memprofile = value
@@ -325,6 +329,8 @@ let flagTable: [Flag] = [
          help: "concurrent workers (1..10); on runtimes without parallelism values above 1 are clamped to 1"),
     Flag(name: "hash", typeLabel: "string", kind: .string,
          help: "inner ITB hash primitive name"),
+    Flag(name: "interlock", typeLabel: "string", kind: .string,
+         help: "Interlocked Barrier chunk width: 48 | 168; empty = profile default (48; 168 requires 512-bit hash)"),
     Flag(name: "iterations", typeLabel: "int", kind: .int64,
          help: "fixed per-worker iteration count; 0 = duration-based"),
     Flag(name: "json-output", typeLabel: "", kind: .bool,
@@ -609,6 +615,14 @@ enum LoopMain {
             return -1
         }
         cfg.drbg = f.drbg // validated by Init: no DRBG-name enumeration exists
+        cfg.interlock = f.interlock
+        switch cfg.interlock {
+        case "", "48", "168":
+            break
+        default:
+            Log.err("--interlock must be 48 | 168 (or empty = profile default), got \"\(cfg.interlock)\"")
+            return -1
+        }
         guard let chunk = parseSize(f.chunkSize) else {
             Log.err("--chunk-size: invalid size \"\(f.chunkSize)\"")
             return -1
@@ -715,6 +729,9 @@ enum LoopMain {
         if !record.drbg.isEmpty {
             line += " drbg=\(record.drbg)"
         }
+        if !record.interlock.isEmpty {
+            line += " interlock=\(record.interlock)"
+        }
         Log.line(line)
     }
 
@@ -740,6 +757,7 @@ enum LoopMain {
             try opts.set("nonceBits", "\(cfg.nonceBits)")
             try opts.set("barrierFill", "\(cfg.barrierFill)")
             try opts.set("drbg", cfg.drbg)
+            try opts.set("interlock", cfg.interlock)
             try opts.set("chunkSize", "\(cfg.chunkSize)")
         } catch {
             Log.err("opts: \(error)")
@@ -833,7 +851,8 @@ enum LoopMain {
             + "payload-mode=\(cfg.payloadMode.name) seed=\(cfg.seed) "
             + "json-output=\(cfg.jsonOutput ? "true" : "false")"
             + (cfg.blobMode != 1 ? " blob-mode=\(cfg.blobMode)" : "")
-            + (cfg.drbg.isEmpty ? "" : " drbg=\(cfg.drbg)"))
+            + (cfg.drbg.isEmpty ? "" : " drbg=\(cfg.drbg)")
+            + (cfg.interlock.isEmpty ? "" : " interlock=\(cfg.interlock)"))
         let env = ProcessInfo.processInfo.environment
         Log.line("policy: microbatch-tiers=\(policyLabel(env["ITB_MICROBATCH_TIERS"])) "
             + "hashpool-starters=\(policyLabel(env["ITB_HASHPOOL_STARTERS"]))")
