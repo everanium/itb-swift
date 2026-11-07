@@ -131,7 +131,7 @@ struct Config {
     var profile = ""              // empty = shape-based profile pair
     var keyBits: Int32 = 0        // 0 = profile default
     var nonceBits: Int32 = 0      // 0 = profile default
-    var blobMode: Int32 = 1       // container floor sizing mode: 1 (per-region, default) | 2 (per-container)
+    var blobMode: Int32 = 1       // container floor sizing mode: 1 (per-region, default) | 2 (per-container) | 3 (gauss-posit)
     var chunkSize: Int64 = 0      // 0 = profile default
     var barrierFill: Int32 = 0    // 0 = profile default
     var drbg = ""                 // DRBG fill primitive; "" = profile default (auto tier)
@@ -314,7 +314,7 @@ let flagTable: [Flag] = [
     Flag(name: "blob-cycle-every", typeLabel: "int", kind: .int64,
          help: "reopen each pipeline from its session blob every N iterations per worker; 0 = never"),
     Flag(name: "blob-mode", typeLabel: "int", kind: .int,
-         help: "container floor sizing mode: 1 (per-region, default) | 2 (per-container)"),
+         help: "container floor sizing mode: 1 (per-region, default) | 2 (per-container) | 3 (gauss-posit)"),
     Flag(name: "chunk-size", typeLabel: "string", kind: .string,
          help: "streaming chunk-size budget (e.g. 4MB); 0 = profile default; inert for pure message shape"),
     Flag(name: "drbg", typeLabel: "string", kind: .string,
@@ -600,10 +600,10 @@ enum LoopMain {
         }
         cfg.blobMode = f.blobMode
         switch cfg.blobMode {
-        case 1, 2:
+        case 1, 2, 3:
             break
         default:
-            Log.err("--blob-mode must be 1 (per-region) | 2 (per-container), got \(cfg.blobMode)")
+            Log.err("--blob-mode must be 1 (per-region) | 2 (per-container) | 3 (gauss-posit), got \(cfg.blobMode)")
             return -1
         }
         cfg.barrierFill = f.barrierFill
@@ -723,8 +723,8 @@ enum LoopMain {
             + "key-bits=\(record.keyBits) nonce-bits=\(record.nonceBits ?? 0) "
             + "barrier-fill=\(record.barrierFill ?? 0) chunk-size=\(record.chunkSize) mac=\(mac) "
             + "parallax=\(onOff(record.parallax)) wrapper=\(onOff(record.wrapper))"
-        if record.containerMode == 2 {
-            line += " container-mode=2"
+        if let cm = record.containerMode, cm == 2 || cm == 3 {
+            line += " container-mode=\(cm)"
         }
         if !record.drbg.isEmpty {
             line += " drbg=\(record.drbg)"

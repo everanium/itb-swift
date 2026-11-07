@@ -96,6 +96,11 @@ final class PersistTests: XCTestCase {
         XCTAssertTrue(try tunedProf.toJSON().contains("\"nonce_bits\":256"))
         XCTAssertTrue(try tunedProf.toJSON().contains("\"barrier_fill\":4"))
 
+        let tuned3 = try Pipeline(profile: "singlemsg-triple-mac-v1", opts: try Opts(["mode": "3"]))
+        let tunedProf3 = try inspect(try tuned3.save())
+        XCTAssertEqual(tunedProf3.containerMode, 3)
+        XCTAssertTrue(try tunedProf3.toJSON().contains("\"container_mode\":3"))
+
         // The registry entry is the recipe alone — neither field is
         // part of it, so both read as absent rather than as zero.
         let registry = try lookup(name: "singlemsg-triple-mac-v1")
